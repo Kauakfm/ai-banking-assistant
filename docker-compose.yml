@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  # Adicionar serviços aqui
+
+volumes:
+  # Adicionar volumes aqui
+
+networks:
+  ai-banking:
+    driver: bridge

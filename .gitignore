@@ -1,0 +1,62 @@
+# Binários
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.exe~
+*.dll
+*.so.*
+*.out
+
+# Diretórios de build
+bin/
+build/
+dist/
+*.egg-info/
+__pycache__/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Dependências
+node_modules/
+vendor/
+go.sum
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.*.local
+
+# Arquivos de teste
+coverage/
+*.cover
+*.test
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.editorconfig.local
