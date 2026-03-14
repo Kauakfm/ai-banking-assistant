@@ -60,3 +60,5 @@ Thumbs.db
 
 # Editor
 .editorconfig.local
+
+.venv
