@@ -27,7 +27,7 @@ func NewOrchestrator(agentURL string) *Orchestrator {
 	return &Orchestrator{
 		agentURL: agentURL,
 		httpClient: &http.Client{
-			Timeout: 45 * time.Second, // Timeout base de segurança
+			Timeout: 25 * time.Second, // Timeout base de segurança
 		},
 		cbAgent: resilience.NewCircuitBreaker("Agent-API"),
 	}

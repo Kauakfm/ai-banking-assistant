@@ -71,7 +71,7 @@ func main() {
 		Addr:         ":8080",
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
