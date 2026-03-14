@@ -59,7 +59,10 @@ func (h *AssistantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.orchestrator.ProcessAssistantQuery(ctx, customerID, query)
 	if err != nil {
-		slog.ErrorContext(ctx, "Falha ao processar requisição do agente", "erro", err.Error())
+		slog.ErrorContext(ctx, "Falha ao processar requisição do agente", 
+			"error", err.Error(),
+			"customerId", customerID,
+			"query", query)
 		respondWithError(w, http.StatusServiceUnavailable, "Serviço temporariamente indisponível. Tente novamente mais tarde.")
 		return
 	}
