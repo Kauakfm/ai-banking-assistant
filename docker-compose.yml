@@ -1,11 +1,30 @@
 version: '3.8'
 
 services:
-  # Adicionar serviços aqui
+  bfa-go:
+    build:
+      context: ./bfa-go
+    ports:
+      - "8080:8080" # Porta principal da API
+    environment:
+      - AGENT_URL=http://agent-python:8000
+    depends_on:
+      - agent-python
+      - prometheus
 
-volumes:
-  # Adicionar volumes aqui
+  agent-python:
+    build:
+      context: ./agent-python
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY} # Lida do .env na raiz
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-""}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-""}
 
-networks:
-  ai-banking:
-    driver: bridge
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
