@@ -3,50 +3,117 @@ package resilience
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/sony/gobreaker"
 )
 
-// Configura e retorna um novo Circuit Breaker
-func NewCircuitBreaker(name string) *gobreaker.CircuitBreaker {
-	settings := gobreaker.Settings{
-		Name:        name,
-		MaxRequests: 5,                // Máximo de requisições permitidas no estado Half-Open
-		Interval:    10 * time.Second, // Tempo de limpeza do contador de falhas
-		Timeout:     5 * time.Second,  // Tempo que o CB fica Open antes de tentar Half-Open
+type CBConfig struct {
+	Name             string
+	MaxRequests      uint32
+	Interval         time.Duration
+	Timeout          time.Duration
+	FailureThreshold uint32
+}
+
+func NewCircuitBreaker(cfg CBConfig) *gobreaker.CircuitBreaker {
+	return gobreaker.NewCircuitBreaker(gobreaker.Settings{
+		Name:        cfg.Name,
+		MaxRequests: cfg.MaxRequests,
+		Interval:    cfg.Interval,
+		Timeout:     cfg.Timeout,
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			// Abre o circuito se houver mais de 3 falhas consecutivas
-			return counts.ConsecutiveFailures > 3
+			return counts.ConsecutiveFailures >= cfg.FailureThreshold
 		},
-	}
-	return gobreaker.NewCircuitBreaker(settings)
+	})
 }
 
-// DoWithRetry executa uma função com Exponential Backoff
-func DoWithRetry(ctx context.Context, maxRetries int, operation func() error) error {
-	var err error
-	for i := 0; i < maxRetries; i++ {
-		err = operation()
-		if err == nil {
-			return nil
-		}
-
-		// Se o contexto foi cancelado (ex: timeout), abortamos o retry
-		if errors.Is(ctx.Err(), context.Canceled) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			return ctx.Err()
-		}
-
-		// Exponential backoff: 200ms, 400ms, 800ms...
-		backoffDuration := time.Duration(math.Pow(2, float64(i))) * 200 * time.Millisecond
-
-		select {
-		case <-time.After(backoffDuration):
-			// Esperou o tempo, tenta de novo
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-	return err
+type RetryConfig struct {
+	MaxAttempts int
+	BaseDelay   time.Duration
+	MaxDelay    time.Duration
 }
+
+type Retrier struct {
+	maxAttempts int
+	baseDelay   time.Duration
+	maxDelay    time.Duration
+}
+
+func NewRetrier(cfg RetryConfig) *Retrier {
+	return &Retrier{
+		maxAttempts: cfg.MaxAttempts,
+		baseDelay:   cfg.BaseDelay,
+		maxDelay:    cfg.MaxDelay,
+	}
+}
+
+func (r *Retrier) Do(ctx context.Context, operation string, fn func() error) error {
+	var lastErr error
+
+	for attempt := 0; attempt < r.maxAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		if err := fn(); err != nil {
+			lastErr = err
+			if attempt < r.maxAttempts-1 {
+				delay := r.backoff(attempt)
+				slog.WarnContext(ctx, "nova tentativa agendada",
+					"operacao", operation,
+					"tentativa", attempt+1,
+					"max_tentativas", r.maxAttempts,
+					"atraso", delay,
+					"erro", err,
+				)
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+			continue
+		}
+		return nil
+	}
+	return lastErr
+}
+
+func (r *Retrier) backoff(attempt int) time.Duration {
+	delay := float64(r.baseDelay) * math.Pow(2, float64(attempt))
+	jitter := rand.Float64() * float64(r.baseDelay)
+	delay += jitter
+	if delay > float64(r.maxDelay) {
+		delay = float64(r.maxDelay)
+	}
+	return time.Duration(delay)
+}
+
+type Bulkhead struct {
+	sem chan struct{}
+}
+
+func NewBulkhead(maxConcurrency int) *Bulkhead {
+	return &Bulkhead{sem: make(chan struct{}, maxConcurrency)}
+}
+
+func (b *Bulkhead) Acquire(ctx context.Context) error {
+	select {
+	case b.sem <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return ErrBulkheadFull
+	}
+}
+
+func (b *Bulkhead) Release() {
+	<-b.sem
+}
+
+var ErrBulkheadFull = errors.New("muitas requisições simultâneas")
