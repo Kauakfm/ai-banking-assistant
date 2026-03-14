@@ -71,17 +71,18 @@ go test ./... -cover
 
 ## Endpoints
 
-### POST /v1/assistant/{customerId}
+### POST /v1/assistant
 
 Envia uma consulta ao Agente de IA para o cliente informado. A resposta é armazenada em cache por TTL configurável.
 
 **Requisição**
 
 ```
-POST /v1/assistant/cliente-001
+POST /v1/assistant
 Content-Type: application/json
 
 {
+  "customer_id": "cliente-001",
   "prompt": "qual é o meu saldo atual?"
 }
 ```
@@ -105,7 +106,7 @@ Quando a resposta vem do cache, o campo `cached` retorna `true`.
 
 | Status | Condição |
 |--------|----------|
-| 400 | `prompt` ausente ou vazio / corpo JSON inválido / `customerId` ausente |
+| 400 | `customer_id` ausente ou vazio / `prompt` ausente ou vazio / corpo JSON inválido |
 | 429 | Bulkhead cheio (muitas requisições simultâneas) |
 | 502 | Agente indisponível ou retornou erro |
 | 503 | Circuit breaker aberto |
@@ -115,6 +116,7 @@ Quando a resposta vem do cache, o campo `cached` retorna `true`.
 **Exemplos de erro**
 
 ```json
+{ "error": "customer_id é obrigatório", "code": 400 }
 { "error": "prompt é obrigatório", "code": 400 }
 { "error": "muitas requisições simultâneas", "code": 429 }
 { "error": "serviço do agente indisponível: agente retornou status 500", "code": 502 }
@@ -322,7 +324,7 @@ rate(bfa_cache_hits_total[5m]) / (rate(bfa_cache_hits_total[5m]) + rate(bfa_cach
 | Retry + Backoff | Exponencial com jitter (`pkg/resilience`) | Clientes de profile e transactions |
 | Bulkhead | Semáforo via channel (`pkg/resilience`) | Middleware global em todas as rotas |
 | Timeout / Context | `context.WithTimeout` + `http.Client.Timeout` | Propagado em toda a cadeia de chamadas |
-| Cache TTL | `patrickmn/go-cache` | Respostas do endpoint `/v1/assistant/{customerId}` |
+| Cache TTL | `patrickmn/go-cache` | Respostas do endpoint `/v1/assistant` |
 | Graceful Shutdown | `signal.Notify` + `http.Server.Shutdown` | Encerramento com dreno de conexões ativas |
 | Recovery Middleware | `defer/recover` | Captura panics em qualquer handler, retorna 500 |
 

@@ -105,7 +105,7 @@ func main() {
 	})
 	mux.Handle("GET /metrics", promhttp.Handler())
 
-	mux.Handle("POST /v1/assistant/{customerId}", assistantH)
+	mux.Handle("POST /v1/assistant", assistantH)
 	mux.Handle("GET /v1/customers/{customerId}/profile", profileH)
 	mux.Handle("GET /v1/customers/{customerId}/transactions", transactionH)
 

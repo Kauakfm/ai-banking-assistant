@@ -65,7 +65,7 @@ func Load() *Config {
 			IdleTimeout:  getEnvDuration("SERVER_IDLE_TIMEOUT", 120*time.Second),
 		},
 		Agent: APIConfig{
-			URL:     getEnv("AGENT_URL", "http://localhost:8000"),
+			URL:     getEnv("AGENT_URL", "http://agent-python:8000"),
 			Timeout: getEnvDuration("AGENT_TIMEOUT", 25*time.Second),
 		},
 		Profile: APIConfig{

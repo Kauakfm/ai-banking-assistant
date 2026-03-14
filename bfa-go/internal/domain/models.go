@@ -3,7 +3,8 @@ package domain
 import "time"
 
 type AssistantRequest struct {
-	Prompt string `json:"prompt"`
+	CustomerID string `json:"customer_id"`
+	Prompt     string `json:"prompt"`
 }
 
 type AssistantResponse struct {
