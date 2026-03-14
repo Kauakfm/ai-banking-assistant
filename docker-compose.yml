@@ -5,9 +5,7 @@ services:
     build:
       context: ./bfa-go
     ports:
-      - "8080:8080" # Porta principal da API
-    environment:
-      - AGENT_URL=http://agent-python:8000
+      - "8080:8080"
     depends_on:
       - agent-python
       - prometheus
