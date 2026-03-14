@@ -54,13 +54,13 @@ func startMockAgent(status int, resp *domain.AgentResponse) *httptest.Server {
 	}))
 }
 
-func postAssistant(h http.Handler, path, body string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, path, bytes.NewBufferString(body))
+func postAssistant(h http.Handler, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/v1/assistant", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	mux := http.NewServeMux()
-	mux.Handle("POST /v1/assistant/{customerId}", h)
+	mux.Handle("POST /v1/assistant", h)
 	mux.ServeHTTP(w, req)
 	return w
 }
@@ -76,7 +76,7 @@ func TestAssistant_Success(t *testing.T) {
 	agentClient := client.NewAgentClient(agentSrv.URL, 5*time.Second, newTestCB(), nil)
 	h := handler.NewAssistantHandler(agentClient, newTestCache(), testMetrics(), nil)
 
-	w := postAssistant(h, "/v1/assistant/c1", `{"prompt":"balance"}`)
+	w := postAssistant(h, `{"customer_id":"c1","prompt":"balance"}`)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("esperado 200, obteve %d: %s", w.Code, w.Body.String())
@@ -106,9 +106,9 @@ func TestAssistant_CacheHit(t *testing.T) {
 	metrics := testMetrics()
 	h := handler.NewAssistantHandler(agentClient, c, metrics, nil)
 
-	postAssistant(h, "/v1/assistant/c1", `{"prompt":"balance"}`)
+	postAssistant(h, `{"customer_id":"c1","prompt":"balance"}`)
 
-	w := postAssistant(h, "/v1/assistant/c1", `{"prompt":"balance"}`)
+	w := postAssistant(h, `{"customer_id":"c1","prompt":"balance"}`)
 
 	var resp domain.AssistantResponse
 	json.NewDecoder(w.Body).Decode(&resp)
@@ -119,7 +119,7 @@ func TestAssistant_CacheHit(t *testing.T) {
 
 func TestAssistant_EmptyPrompt(t *testing.T) {
 	h := handler.NewAssistantHandler(nil, newTestCache(), testMetrics(), nil)
-	w := postAssistant(h, "/v1/assistant/c1", `{"prompt":""}`)
+	w := postAssistant(h, `{"customer_id":"c1","prompt":""}`)
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("esperado 400, obteve %d", w.Code)
@@ -128,7 +128,7 @@ func TestAssistant_EmptyPrompt(t *testing.T) {
 
 func TestAssistant_InvalidBody(t *testing.T) {
 	h := handler.NewAssistantHandler(nil, newTestCache(), testMetrics(), nil)
-	w := postAssistant(h, "/v1/assistant/c1", `not json`)
+	w := postAssistant(h, `not json`)
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("esperado 400, obteve %d", w.Code)
@@ -142,7 +142,7 @@ func TestAssistant_AgentError(t *testing.T) {
 	agentClient := client.NewAgentClient(agentSrv.URL, 5*time.Second, newTestCB(), nil)
 	h := handler.NewAssistantHandler(agentClient, newTestCache(), testMetrics(), nil)
 
-	w := postAssistant(h, "/v1/assistant/c1", `{"prompt":"test"}`)
+	w := postAssistant(h, `{"customer_id":"c1","prompt":"test"}`)
 
 	if w.Code != http.StatusBadGateway {
 		t.Errorf("esperado 502, obteve %d", w.Code)

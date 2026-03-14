@@ -32,12 +32,6 @@ func NewAssistantHandler(agent *client.AgentClient, c *cache.Cache, m *middlewar
 func (h *AssistantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
-	customerID := r.PathValue("customerId")
-	if customerID == "" {
-		pkgerr.WriteError(w, http.StatusBadRequest, "ID do cliente é obrigatório")
-		return
-	}
-
 	var req domain.AssistantRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		pkgerr.WriteError(w, http.StatusBadRequest, "corpo da requisição inválido")
@@ -45,11 +39,17 @@ func (h *AssistantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	if strings.TrimSpace(req.CustomerID) == "" {
+		pkgerr.WriteError(w, http.StatusBadRequest, "customer_id é obrigatório")
+		return
+	}
+
 	if strings.TrimSpace(req.Prompt) == "" {
 		pkgerr.WriteError(w, http.StatusBadRequest, "prompt é obrigatório")
 		return
 	}
 
+	customerID := req.CustomerID
 	cacheKey := fmt.Sprintf("assistant:%s:%s", customerID, req.Prompt)
 	if cached, ok := h.cache.Get(cacheKey); ok {
 		h.metrics.CacheHits.Inc()
