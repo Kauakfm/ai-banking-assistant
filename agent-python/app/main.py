@@ -1,18 +1,22 @@
 import os
-from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
+from langfuse.callback import CallbackHandler # <-- NOVA IMPORTAÇÃO
+
 from app.agent.graph import agent_app
+from app.rag.indexer import get_vector_store
 
-# Carrega variáveis de ambiente do arquivo .env (se existir)
-# Útil para desenvolvimento local; em Docker, usa variáveis de ambiente diretos
-try:
-    load_dotenv()
-except:
-    pass
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Inicializando e indexando a base de conhecimento (RAG)...")
+    get_vector_store()
+    print("RAG carregado com sucesso. Servidor pronto.")
+    yield
+    print("Encerrando agente...")
 
-app = FastAPI(title="GenAI Agent API")
+app = FastAPI(title="GenAI Agent API", lifespan=lifespan)
 
 class ContextRequest(BaseModel):
     customer_id: str
@@ -30,7 +34,16 @@ async def generate_response(request: ContextRequest):
             "tools_used": []
         }
         
-        result_state = agent_app.invoke(initial_state)
+        config = {}
+        if os.getenv("LANGFUSE_PUBLIC_KEY") and os.getenv("LANGFUSE_SECRET_KEY"):
+            langfuse_handler = CallbackHandler(
+                secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+                public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+                host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+            )
+            config = {"callbacks": [langfuse_handler]}
+                
+        result_state = agent_app.invoke(initial_state, config=config)
         
         return {
             "answer": result_state.get("final_answer", ""),
