@@ -3,23 +3,33 @@ package cache
 import (
 	"time"
 
-	"github.com/patrickmn/go-cache"
+	gocache "github.com/patrickmn/go-cache"
 )
 
-type LocalCache struct {
-	store *cache.Cache
+type Cache struct {
+	store      *gocache.Cache
+	defaultTTL time.Duration
 }
 
-func NewLocalCache(defaultExpiration, cleanupInterval time.Duration) *LocalCache {
-	return &LocalCache{
-		store: cache.New(defaultExpiration, cleanupInterval),
+func New(defaultTTL, cleanupInterval time.Duration) *Cache {
+	return &Cache{
+		store:      gocache.New(defaultTTL, cleanupInterval),
+		defaultTTL: defaultTTL,
 	}
 }
 
-func (c *LocalCache) Set(key string, value interface{}, d time.Duration) {
-	c.store.Set(key, value, d)
+func (c *Cache) Get(key string) (any, bool) {
+	return c.store.Get(key)
 }
 
-func (c *LocalCache) Get(key string) (interface{}, bool) {
-	return c.store.Get(key)
+func (c *Cache) Set(key string, value any) {
+	c.store.Set(key, value, c.defaultTTL)
+}
+
+func (c *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
+	c.store.Set(key, value, ttl)
+}
+
+func (c *Cache) Delete(key string) {
+	c.store.Delete(key)
 }
