@@ -19,6 +19,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY} # Lida do .env na raiz
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-""}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-""}
+      - BFA_GO_URL=http://bfa-go:8080
 
   prometheus:
     image: prom/prometheus:latest
@@ -26,7 +27,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-      
+
   langfuse-db:
     image: postgres:15
     environment:
