@@ -10,7 +10,6 @@ import (
 
 type Config struct {
 	Server      ServerConfig
-	Agent       APIConfig
 	Profile     APIConfig
 	Transaction APIConfig
 	Cache       CacheConfig
@@ -63,10 +62,6 @@ func Load() *Config {
 			ReadTimeout:  getEnvDuration("SERVER_READ_TIMEOUT", 5*time.Second),
 			WriteTimeout: getEnvDuration("SERVER_WRITE_TIMEOUT", 30*time.Second),
 			IdleTimeout:  getEnvDuration("SERVER_IDLE_TIMEOUT", 120*time.Second),
-		},
-		Agent: APIConfig{
-			URL:     getEnv("AGENT_URL", "http://agent-python:8000"),
-			Timeout: getEnvDuration("AGENT_TIMEOUT", 25*time.Second),
 		},
 		Profile: APIConfig{
 			URL:     getEnv("PROFILE_API_URL", ""),

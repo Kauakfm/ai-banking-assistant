@@ -7,13 +7,12 @@ import (
 )
 
 var (
-	ErrNotFound         = errors.New("recurso não encontrado")
-	ErrUnavailable      = errors.New("serviço temporariamente indisponível")
-	ErrTimeout          = errors.New("tempo limite da requisição excedido")
-	ErrCircuitOpen      = errors.New("circuit breaker aberto")
-	ErrBulkheadFull     = errors.New("muitas requisições simultâneas")
-	ErrBadRequest       = errors.New("requisição inválida")
-	ErrAgentUnavailable = errors.New("serviço do agente indisponível")
+	ErrNotFound     = errors.New("recurso não encontrado")
+	ErrUnavailable  = errors.New("serviço temporariamente indisponível")
+	ErrTimeout      = errors.New("tempo limite da requisição excedido")
+	ErrCircuitOpen  = errors.New("circuit breaker aberto")
+	ErrBulkheadFull = errors.New("muitas requisições simultâneas")
+	ErrBadRequest   = errors.New("requisição inválida")
 )
 
 type APIError struct {
@@ -43,7 +42,7 @@ func HandleError(w http.ResponseWriter, err error) {
 		WriteError(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, ErrTimeout):
 		WriteError(w, http.StatusGatewayTimeout, err.Error())
-	case errors.Is(err, ErrUnavailable), errors.Is(err, ErrAgentUnavailable):
+	case errors.Is(err, ErrUnavailable):
 		WriteError(w, http.StatusBadGateway, err.Error())
 	default:
 		WriteError(w, http.StatusInternalServerError, "erro interno do servidor")

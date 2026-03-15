@@ -1,103 +1,135 @@
-# Arquitetura — AI Banking Assistant
+# Arquitetura — AI Banking Assistant (Padrão BFA)
 
 ## Visão Geral
 
+A arquitetura segue o padrão **BFA (Back-end for Agents)**, onde:
+- O **Agente** (Python/LangGraph) é o ponto de entrada e responsável pela **jornada** do cliente
+- O **BFA** (Go) é a camada intermediária que encapsula APIs de domínio com cache, resiliência, logging e políticas
+
+> *"A responsabilidade do agente é a jornada — e não o backend."*
+
 ```mermaid
 graph TB
-    Client([Cliente PJ]) -->|HTTP| APIGW[API Gateway]
+    Client([Cliente PJ]) -->|HTTP POST /generate| AGENT_SERVICE
 
-    subgraph BFA_GO["BFA Go — Orquestrador"]
-        APIGW --> Router[Router / Middleware]
-        Router --> Handler[Assistant Handler]
-        Handler --> Orchestrator[Orchestrator]
+    subgraph AGENT_SERVICE["Agente — Python / LangGraph (A Jornada)"]
+        direction TB
+        InputGuard[Input Guardrail] --> Planner[Planner Node]
+        Planner --> Executor[Executor Node]
+        Executor --> Tools[Tool Dispatcher]
+        Tools --> RAGTool[RAG Tool — Local]
+        Tools -->|MCP| BFA_PROFILE[BFA: get_customer_profile]
+        Tools -->|MCP| BFA_TXN[BFA: get_customer_transactions]
+        Executor --> Formatter[Formatter Node]
+        Formatter --> OutputGuard[Output Guardrail]
+    end
 
-        Orchestrator -->|goroutine| ProfileAPI[Profile API]
-        Orchestrator -->|goroutine| TransactionsAPI[Transactions API]
-        Orchestrator -->|goroutine| AgentCall[Agent Service Call]
+    subgraph BFA_GO["BFA Go — Back-end for Agents (O Backend)"]
+        direction TB
+        Router[Router / Middleware Stack]
+        Router --> ProfileH[Profile Handler]
+        Router --> TxnH[Transaction Handler]
+
+        subgraph BFA_CORE["Responsabilidades BFA"]
+            Cache[(Cache TTL)]
+            Auth[Políticas / Auth]
+            Logging[Logging Centralizado]
+            Metrics[Métricas Prometheus]
+        end
+
+        ProfileH --- BFA_CORE
+        TxnH --- BFA_CORE
 
         subgraph Resilience["Resiliência"]
             CB[Circuit Breaker]
             RT[Retry + Backoff]
             BH[Bulkhead]
-            TO[Timeout / Context]
         end
 
-        Orchestrator --- Resilience
-        Handler --> Cache[(Cache TTL)]
+        ProfileH --> ProfileAPI[Profile API de Domínio]
+        TxnH --> TransactionsAPI[Transactions API de Domínio]
+        ProfileH --- Resilience
+        TxnH --- Resilience
     end
 
-    subgraph AGENT_SERVICE["Agent Service — Python / LangGraph"]
-        AgentCall -->|gRPC / HTTP| Planner[Planner Node]
-        Planner --> Executor[Executor Node]
-        Executor --> Tools[Tool Dispatcher]
-        Tools --> RAGTool[RAG Tool]
-        Tools --> FinancialTool[Financial Analysis Tool]
-        Tools --> RecommendationTool[Recommendation Tool]
-        Executor --> Consolidator[Consolidator Node]
-    end
+    BFA_PROFILE -->|HTTP| Router
+    BFA_TXN -->|HTTP| Router
 
-    subgraph KNOWLEDGE["Knowledge Base"]
-        RAGTool --> VectorDB[(Vector Store)]
-        RAGTool --> Embeddings[Embedding Model]
-        VectorDB --- Chunks[Document Chunks]
-    end
-
-    subgraph OBSERVABILITY["Observabilidade"]
-        OTel[OpenTelemetry Collector]
-        Prometheus[Prometheus]
-        LangFuse[LangFuse]
-        Grafana[Grafana]
-
-        BFA_GO -.->|traces| OTel
-        BFA_GO -.->|metrics| Prometheus
-        AGENT_SERVICE -.->|traces + tokens| LangFuse
-        OTel -.-> Grafana
-        Prometheus -.-> Grafana
+    subgraph KNOWLEDGE["Knowledge Base — Local no Agente"]
+        RAGTool --> VectorDB[(ChromaDB)]
+        RAGTool --> Embeddings[OpenAI Embeddings]
     end
 
     subgraph LLM_PROVIDER["LLM Provider"]
-        LLM[LLM API]
+        LLM[OpenAI API]
     end
 
     Planner -->|prompt| LLM
-    Consolidator -->|prompt| LLM
+    Executor -->|prompt + tools| LLM
+    Formatter -->|prompt| LLM
+    InputGuard -->|classificação| LLM
+    OutputGuard -->|auditoria| LLM
+
+    subgraph OBSERVABILITY["Observabilidade"]
+        Prometheus[Prometheus]
+        LangFuse[LangFuse]
+
+        BFA_GO -.->|metrics + traces| Prometheus
+        AGENT_SERVICE -.->|traces + tokens| LangFuse
+    end
 ```
 
-## Endpoint Principal
+## Fluxo Principal — Padrão BFA
 
 ```
-GET /v1/assistant/{customerId}
+Cliente → Agente (LLM + Jornada) → BFA (Cache + Resiliência) → APIs de Domínio
 ```
 
 ```mermaid
 sequenceDiagram
     participant C as Cliente
+    participant Agent as Agente Python
+    participant LLM as LLM (OpenAI)
     participant BFA as BFA Go
-    participant Cache as Cache
+    participant Cache as BFA Cache
     participant Profile as Profile API
     participant Txn as Transactions API
-    participant Agent as Agent Service
-    participant LLM as LLM
 
-    C->>BFA: GET /v1/assistant/{customerId}
-    BFA->>Cache: Check cache
-    alt Cache hit
-        Cache-->>BFA: Cached response
-        BFA-->>C: 200 OK (cached)
-    else Cache miss
-        par Chamadas concorrentes
-            BFA->>Profile: Get profile
-            BFA->>Txn: Get transactions
+    C->>Agent: POST /generate {customer_id, query}
+    Agent->>Agent: Input Guardrail (sanitize + risk)
+    Agent->>LLM: Planner — criar plano
+    LLM-->>Agent: Plano de execução
+    Agent->>LLM: Executor — executar plano
+    LLM-->>Agent: Tool calls necessárias
+
+    par Agente chama BFA para dados de domínio
+        Agent->>BFA: GET /v1/customers/{id}/profile
+        BFA->>Cache: Check cache
+        alt Cache hit
+            Cache-->>BFA: Perfil em cache
+        else Cache miss
+            BFA->>Profile: Buscar perfil (com retry + CB)
+            Profile-->>BFA: Dados do perfil
+            BFA->>Cache: Armazenar (TTL)
         end
-        Profile-->>BFA: Customer profile
-        Txn-->>BFA: Transaction history
-        BFA->>Agent: Send context (profile + transactions)
-        Agent->>LLM: Plan + Execute + Consolidate
-        LLM-->>Agent: Structured response
-        Agent-->>BFA: Recommendation + justification
-        BFA->>Cache: Store (TTL)
-        BFA-->>C: 200 OK
+        BFA-->>Agent: Perfil do cliente
+
+        Agent->>BFA: GET /v1/customers/{id}/transactions
+        BFA->>Cache: Check cache
+        alt Cache hit
+            Cache-->>BFA: Transações em cache
+        else Cache miss
+            BFA->>Txn: Buscar transações (com retry + CB)
+            Txn-->>BFA: Lista de transações
+            BFA->>Cache: Armazenar (TTL)
+        end
+        BFA-->>Agent: Transações do cliente
     end
+
+    Agent->>LLM: Formatter — estruturar resposta
+    LLM-->>Agent: Resposta formatada (JSON)
+    Agent->>Agent: Output Guardrail (auditoria)
+    Agent-->>C: 200 OK {response, metadata}
 ```
 
 ## Endpoints de Infraestrutura
@@ -128,7 +160,7 @@ graph TD
     Call -->|Sucesso| Response
 ```
 
-## Estratégia de Deploy — AWS
+## Estratégia de Deploy — AWS (Padrão BFA)
 
 ```mermaid
 graph TB
@@ -136,30 +168,30 @@ graph TB
         ALB[Application Load Balancer]
 
         subgraph ECS["ECS Fargate"]
-            BFA_TASK[BFA Go Task]
-            AGENT_TASK[Agent Service Task]
+            AGENT_TASK[Agente Python — Ponto de Entrada]
+            BFA_TASK[BFA Go — Backend for Agents]
         end
 
         subgraph DATA["Data Layer"]
             ElastiCache[(ElastiCache / Redis)]
             S3[(S3 — Knowledge Base)]
-            VectorDB[(Vector Store)]
+            VectorDB[(ChromaDB)]
         end
 
         subgraph MONITORING["Monitoring"]
             CloudWatch[CloudWatch]
-            OTEL_COL[OTel Collector]
+            Prometheus[Prometheus]
             LANGFUSE[LangFuse]
         end
 
-        ALB --> BFA_TASK
-        BFA_TASK --> AGENT_TASK
+        ALB --> AGENT_TASK
+        AGENT_TASK -->|BFA calls| BFA_TASK
         BFA_TASK --> ElastiCache
         AGENT_TASK --> VectorDB
         AGENT_TASK --> S3
-        BFA_TASK -.-> OTEL_COL
+        BFA_TASK -.-> Prometheus
         AGENT_TASK -.-> LANGFUSE
-        OTEL_COL -.-> CloudWatch
+        Prometheus -.-> CloudWatch
     end
 
     subgraph EXTERNAL["External"]
@@ -169,43 +201,59 @@ graph TB
     AGENT_TASK --> LLM_API
 ```
 
-## Comunicação entre Serviços
+## Contratos do BFA (APIs expostas aos Agentes)
+
+| Endpoint | Método | Domínio | Descrição |
+|---|---|---|---|
+| `/v1/customers/{id}/profile` | GET | Perfil | Dados cadastrais do cliente |
+| `/v1/customers/{id}/transactions` | GET | Transações | Histórico financeiro |
+| `/healthz` | GET | Infra | Health check |
+| `/readyz` | GET | Infra | Readiness check |
+| `/metrics` | GET | Infra | Métricas Prometheus |
+
+## Endpoint do Agente (Ponto de entrada do cliente)
+
+| Endpoint | Método | Descrição |
+|---|---|---|
+| `/generate` | POST | Recebe `{customer_id, query}` e retorna resposta do assistente |
+
+## Comunicação entre Serviços (Padrão BFA)
 
 | De | Para | Protocolo | Motivo |
 |---|---|---|---|
-| Client | BFA Go | HTTP/REST | Ponto de entrada |
-| BFA Go | Profile API | HTTP | Dados do cliente |
-| BFA Go | Transactions API | HTTP | Histórico financeiro |
-| BFA Go | Agent Service | HTTP/gRPC | Invocação do agente |
-| Agent Service | LLM Provider | HTTP | Inferência |
-| Agent Service | Vector Store | SDK | Busca semântica |
+| Cliente | Agente Python | HTTP/REST | Ponto de entrada — a jornada |
+| Agente Python | BFA Go | HTTP/REST | Obter dados de domínio (perfil, transações) |
+| BFA Go | Profile API | HTTP | Dados do cliente (com cache + resiliência) |
+| BFA Go | Transactions API | HTTP | Histórico financeiro (com cache + resiliência) |
+| Agente Python | LLM Provider | HTTP | Inferência / raciocínio |
+| Agente Python | ChromaDB | SDK | Busca semântica na knowledge base |
 
 ## Escalabilidade
 
 ```mermaid
 graph LR
-    subgraph Horizontal["Escala Horizontal"]
-        BFA1[BFA Go #1]
-        BFA2[BFA Go #2]
-        BFA3[BFA Go #N]
-    end
-
-    subgraph AgentScale["Agent Scale"]
+    subgraph AgentScale["Escala do Agente (Ponto de Entrada)"]
         A1[Agent #1]
         A2[Agent #2]
         A3[Agent #N]
     end
 
-    LB[Load Balancer] --> BFA1
-    LB --> BFA2
-    LB --> BFA3
+    subgraph BFAScale["Escala do BFA (Backend)"]
+        BFA1[BFA Go #1]
+        BFA2[BFA Go #2]
+        BFA3[BFA Go #N]
+    end
 
-    BFA1 --> A1
-    BFA2 --> A2
-    BFA3 --> A3
+    LB[Load Balancer] --> A1
+    LB --> A2
+    LB --> A3
+
+    A1 --> BFA1
+    A2 --> BFA2
+    A3 --> BFA3
 ```
 
-- **BFA Go**: Stateless, escala horizontalmente via réplicas ECS
-- **Agent Service**: Escala independente, separado do BFA
+- **Agent Python**: Ponto de entrada do cliente — escala horizontalmente via réplicas ECS
+- **BFA Go**: Stateless, escala horizontalmente — serve dados de domínio aos agentes
 - **Cache**: Redis compartilhado entre instâncias do BFA
-- **Vector Store**: Escala vertical ou managed service
+- **ChromaDB**: Escala vertical ou managed service

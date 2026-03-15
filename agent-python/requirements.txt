@@ -1,10 +1,16 @@
-fastapi==0.110.0
-uvicorn==0.27.1
-pydantic==2.6.3
-langchain==0.1.12
-langchain-openai==0.0.8
-langgraph==0.0.26
-chromadb==0.4.24
-tiktoken==0.6.0
-langfuse==2.14.0
-python-dotenv==1.0.0
+fastapi>=0.110.0,<1.0
+uvicorn>=0.27.0,<1.0
+pydantic>=2.7.4,<3.0
+httpx>=0.25.0
+langchain>=0.3.0
+langchain-openai>=0.3.0
+langchain-community>=0.3.0
+langchain-text-splitters>=0.3.0
+langgraph>=0.2.0
+chromadb>=0.6.0
+tiktoken>=0.7.0
+langfuse>=2.14.0,<3.0
+python-dotenv>=1.0.0
+# MCP — Model Context Protocol (comunicação Agente ↔ BFA)
+mcp>=1.0.0
+langchain-mcp-adapters>=0.1.0

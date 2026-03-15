@@ -62,3 +62,6 @@ Thumbs.db
 .editorconfig.local
 
 .venv
+
+# GitHub Actions / Workflows
+.github/
