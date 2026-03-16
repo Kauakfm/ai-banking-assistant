@@ -1,0 +1,176 @@
+POLÍTICAS DE CRÉDITO PJ – ITAÚ (DOCUMENTO FICTÍCIO)
+1. REGRAS GERAIS DE CONCESSÃO
+
+A concessão de crédito para clientes Pessoa Jurídica (PJ) segue critérios rigorosos de análise de risco, com o objetivo de garantir sustentabilidade financeira tanto para o cliente quanto para a instituição financeira. O processo de concessão considera múltiplos fatores, incluindo faturamento anual, histórico de relacionamento com o banco, tempo de constituição da empresa, setor de atuação e histórico de inadimplência registrado em bureaus de crédito como Serasa e SPC.
+
+Empresas com menos de 12 meses de constituição (CNPJ recente) são classificadas como empresas em estágio inicial e, portanto, apresentam maior risco de crédito. Nesses casos, a concessão de crédito pré-aprovado é limitada a R$ 10.000,00 (dez mil reais), salvo exceções aprovadas manualmente por analistas de crédito seniores.
+
+Além disso, clientes PJ devem possuir conta corrente ativa e movimentação financeira consistente por no mínimo 6 meses para se tornarem elegíveis a produtos de crédito estruturado.
+
+Critérios adicionais considerados no processo de análise incluem:
+
+Índice de endividamento da empresa
+
+Histórico de relacionamento com a instituição financeira
+
+Regularidade fiscal e tributária
+
+Existência de protestos ou processos judiciais relevantes
+
+Empresas com histórico recente de inadimplência superior a 60 dias podem ter suas solicitações de crédito automaticamente reprovadas, dependendo da análise do risco sistêmico e do score de crédito corporativo.
+
+2. CLASSIFICAÇÃO DE PERFIL DE RISCO
+
+Para fins de análise e concessão de crédito, os clientes PJ são classificados em diferentes categorias de risco, baseadas em score interno de crédito e indicadores financeiros.
+
+As categorias padrão são:
+
+Perfil A – Baixo Risco
+
+Faturamento consistente
+
+Histórico positivo com o banco
+
+Ausência de restrições de crédito
+
+Endividamento inferior a 30% do faturamento anual
+
+Perfil B – Risco Moderado
+
+Pequenas variações de faturamento
+
+Eventuais atrasos de pagamento inferiores a 30 dias
+
+Endividamento entre 30% e 50% do faturamento anual
+
+Perfil C – Risco Elevado
+
+Alta volatilidade de faturamento
+
+Presença de restrições em bureaus de crédito
+
+Endividamento superior a 50% do faturamento anual
+
+Clientes classificados como Perfil C estão sujeitos a exigência obrigatória de garantias adicionais para qualquer linha de crédito superior a R$ 50.000,00.
+
+3. CLIENTES COM FATURAMENTO ACIMA DE R$ 500.000,00
+
+Clientes PJ que apresentem faturamento anual comprovado superior a R$ 500.000,00 (quinhentos mil reais) são elegíveis para uma avaliação de crédito diferenciada dentro da política de crédito empresarial.
+
+Nessa faixa de faturamento, o limite pré-aprovado padrão é calculado com base em 10% do faturamento anual comprovado, respeitando o teto máximo de exposição de R$ 2.000.000,00 (dois milhões de reais).
+
+Por exemplo:
+
+Empresa com faturamento de R$ 800.000/ano → limite estimado de R$ 80.000
+
+Empresa com faturamento de R$ 3.000.000/ano → limite estimado de R$ 300.000
+
+A aprovação final depende da ausência de apontamentos negativos relevantes nos últimos 24 meses.
+
+Adicionalmente, empresas com faturamento acima de R$ 5.000.000/ano podem solicitar revisão manual de limite junto à área de crédito corporativo.
+
+4. ANTECIPAÇÃO DE RECEBÍVEIS
+
+A antecipação de recebíveis é um produto financeiro amplamente utilizado por empresas para melhorar fluxo de caixa. Nesse modelo, o banco antecipa valores referentes a vendas realizadas no cartão de crédito ou boleto, mediante cobrança de uma taxa financeira.
+
+A taxa padrão praticada para antecipação de recebíveis de cartão de crédito é de 1,5% ao mês sobre o valor antecipado.
+
+Para clientes do segmento Corporate, definido como empresas com faturamento superior a R$ 50 milhões por ano, existe possibilidade de negociação de taxas diferenciadas.
+
+Nesses casos, as taxas podem iniciar em 0,9% ao mês, dependendo de fatores como:
+
+Volume de recebíveis processados pelo banco
+
+Histórico de relacionamento
+
+Garantias adicionais
+
+A aprovação dessas condições diferenciadas depende de avaliação da mesa de operações financeiras e da área de risco de crédito.
+
+5. CAPITAL DE GIRO
+
+Linhas de crédito destinadas a capital de giro são utilizadas por empresas para financiar necessidades operacionais, como pagamento de fornecedores, folha salarial ou aquisição de insumos.
+
+Para valores solicitados superiores a 30% do faturamento anual, o banco exige a apresentação de garantias reais ou fiduciárias.
+
+As garantias aceitas incluem:
+
+imóveis comerciais ou industriais
+
+recebíveis performados
+
+aplicações financeiras em garantia
+
+cessão fiduciária de contratos
+
+O prazo máximo de parcelamento para linhas de capital de giro é de 48 meses, com possibilidade de carência inicial de até 6 meses para início do pagamento das parcelas.
+
+Durante o período de carência, o cliente pode optar pelo pagamento apenas de juros ou pela capitalização dos encargos financeiros.
+
+6. LINHAS DE CRÉDITO ESPECIALIZADAS
+
+Além das linhas tradicionais de crédito, o banco disponibiliza modalidades específicas para diferentes necessidades empresariais.
+
+Entre elas:
+
+Crédito para Expansão Empresarial
+
+Destinado a empresas que pretendem investir em expansão de operações, abertura de novas unidades ou aquisição de equipamentos produtivos.
+
+Características:
+
+prazo máximo de 60 meses
+
+carência de até 12 meses
+
+análise detalhada de viabilidade econômica do projeto
+
+Financiamento de Equipamentos
+
+Permite financiamento de máquinas industriais, equipamentos tecnológicos ou veículos comerciais.
+
+Condições gerais:
+
+financiamento de até 80% do valor do bem
+
+prazo máximo de 72 meses
+
+o próprio equipamento pode ser utilizado como garantia
+
+7. MONITORAMENTO DE RISCO
+
+Após a concessão do crédito, os clientes PJ passam por monitoramento contínuo de risco.
+
+Esse processo envolve:
+
+análise periódica da movimentação financeira da conta
+
+monitoramento de indicadores de inadimplência
+
+atualização de score de crédito
+
+revisão anual de limites de crédito
+
+Caso sejam identificados sinais de deterioração financeira, o banco pode adotar medidas como:
+
+redução de limite de crédito
+
+exigência de garantias adicionais
+
+renegociação de condições contratuais
+
+8. POLÍTICAS DE REVISÃO DE LIMITE
+
+Clientes PJ podem solicitar revisão de limite de crédito a qualquer momento, desde que apresentem documentação financeira atualizada.
+
+Os documentos normalmente exigidos incluem:
+
+balanço patrimonial
+
+demonstração de resultados
+
+extratos bancários recentes
+
+declaração de faturamento
+
+A revisão de limite é analisada pela área de risco de crédito, que considera tanto o desempenho histórico quanto as perspectivas financeiras da empresa.

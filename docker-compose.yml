@@ -1,26 +1,26 @@
-version: '3.8'
-
 services:
-  bfa-go:
-    build:
-      context: ./bfa-go
-    ports:
-      - "8080:8080" # Porta principal da API
-    environment:
-      - AGENT_URL=http://agent-python:8000
-    depends_on:
-      - agent-python
-      - prometheus
-
   agent-python:
     build:
       context: ./agent-python
     ports:
       - "8000:8000"
+    depends_on:
+      - bfa-go
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY} # Lida do .env na raiz
-      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-""}
-      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-""}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_HOST=http://langfuse-server:3000
+      - BFA_GO_URL=http://bfa-go:8080
+
+  bfa-go:
+    build:
+      context: ./bfa-go
+    ports:
+      - "8080:8080"
+    depends_on:
+      - prometheus
 
   prometheus:
     image: prom/prometheus:latest
@@ -28,3 +28,37 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+
+  langfuse-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=langfuse
+    ports:
+      - "5432:5432"
+    volumes:
+      - langfuse_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  langfuse-server:
+    image: langfuse/langfuse:2
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@langfuse-db:5432/langfuse
+      - NEXTAUTH_SECRET=ai-banking-assistant_secret_super_safe
+      - SALT=ai-banking-assistant_salt_super_safe
+      - NEXTAUTH_URL=http://localhost:3000
+      - TELEMETRY_ENABLED=false
+      - ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
+
+volumes:
+  langfuse_data:
