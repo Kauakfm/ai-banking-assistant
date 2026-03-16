@@ -46,16 +46,11 @@ def build_supervisor(mcp_tools: list, rag_tool):
 
     llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0)
 
-    # --- Sub-agentes especializados (cada um com suas ferramentas) ---
     profile_agent_node = create_profile_agent(mcp_tools)
     transaction_agent_node = create_transaction_agent(mcp_tools)
     knowledge_agent_node = create_knowledge_agent(rag_tool)
 
-    # ================================================================
-    #                         NÓS DO GRAFO
-    # ================================================================
-
-    def input_guardrail_node(state: AgentState, config: RunnableConfig = None) -> dict:
+    async def input_guardrail_node(state: AgentState, config: RunnableConfig = None) -> dict:
         """Guardrail de entrada: sanitização + classificação de risco."""
         query = state["query"]
 
@@ -67,7 +62,7 @@ def build_supervisor(mcp_tools: list, rag_tool):
                 "risk_score": 1.0,
             }
 
-        risk = classify_risk(sanitized, config=config)
+        risk = await classify_risk(sanitized, config=config)
         risk_score = risk.get("risk_score", 0.0)
 
         if risk_score > 0.7:
@@ -151,7 +146,7 @@ def build_supervisor(mcp_tools: list, rag_tool):
                 "justification": "Erro ao estruturar justificativa.",
             }
 
-    def output_guardrail_node(state: AgentState, config: RunnableConfig = None) -> dict:
+    async def output_guardrail_node(state: AgentState, config: RunnableConfig = None) -> dict:
         """Guardrail de saída: verifica se a resposta é segura e fundamentada."""
         answer = state.get("final_answer", "")
         if not answer:
@@ -166,7 +161,7 @@ def build_supervisor(mcp_tools: list, rag_tool):
             context_parts.append(state["knowledge_result"])
 
         context = "\n".join(context_parts)
-        review = verify_output(answer, context, config=config)
+        review = await verify_output(answer, context, config=config)
 
         if not review.get("approved", True):
             return {
@@ -175,10 +170,6 @@ def build_supervisor(mcp_tools: list, rag_tool):
             }
 
         return {}
-
-    # ================================================================
-    #                    FUNÇÕES DE ROTEAMENTO
-    # ================================================================
 
     def check_input_safety(state: AgentState) -> str:
         """Decide se a entrada é segura para prosseguir."""
@@ -213,13 +204,8 @@ def build_supervisor(mcp_tools: list, rag_tool):
             return "knowledge"
         return "formatter"
 
-    # ================================================================
-    #                   CONSTRUÇÃO DO GRAFO
-    # ================================================================
-
     workflow = StateGraph(AgentState)
 
-    # Nós
     workflow.add_node("input_guardrail", input_guardrail_node)
     workflow.add_node("planner", planner_node)
     workflow.add_node("profile_agent", profile_agent_node)
@@ -228,10 +214,8 @@ def build_supervisor(mcp_tools: list, rag_tool):
     workflow.add_node("formatter", formatter_node)
     workflow.add_node("output_guardrail", output_guardrail_node)
 
-    # Ponto de entrada
     workflow.set_entry_point("input_guardrail")
 
-    # Edges condicionais
     workflow.add_conditional_edges(
         "input_guardrail",
         check_input_safety,

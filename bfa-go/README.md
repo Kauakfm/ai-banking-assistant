@@ -13,11 +13,9 @@ bfa-go/
 ├── internal/
 │   ├── domain/models.go             modelos de domínio (structs, sem dependências externas)
 │   ├── client/
-│   │   ├── agent.go                 cliente HTTP para o Agente Python (circuit breaker)
 │   │   ├── profile.go               cliente HTTP para a Profile API (circuit breaker + retry + mock)
 │   │   └── transaction.go           cliente HTTP para a Transactions API (circuit breaker + retry + mock)
 │   └── handler/
-│       ├── assistant.go             POST /v1/assistant/{customerId}
 │       ├── profile.go               GET  /v1/customers/{customerId}/profile
 │       └── transaction.go           GET  /v1/customers/{customerId}/transactions
 └── pkg/

@@ -12,8 +12,6 @@ import (
 	"github.com/kauakfm/ai-banking-assistant/pkg/middleware"
 )
 
-// TransactionHandler é o handler BFA para o domínio de transações do cliente.
-// Encapsula cache, métricas, logging e resiliência.
 type TransactionHandler struct {
 	client  *client.TransactionClient
 	cache   *cache.Cache
@@ -37,7 +35,6 @@ func (h *TransactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cache: verificar se já temos as transações em cache
 	cacheKey := fmt.Sprintf("transactions:%s", customerID)
 	if cached, ok := h.cache.Get(cacheKey); ok {
 		h.metrics.CacheHits.Inc()
@@ -50,7 +47,6 @@ func (h *TransactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	h.metrics.CacheMisses.Inc()
 
-	// Chamada à API de domínio via client com resiliência
 	transactions, err := h.client.GetByCustomerID(r.Context(), customerID)
 	if err != nil {
 		h.log.ErrorContext(r.Context(), "falha ao consultar transações via BFA",
@@ -61,7 +57,6 @@ func (h *TransactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Armazenar no cache do BFA
 	h.cache.Set(cacheKey, transactions)
 
 	h.log.InfoContext(r.Context(), "transações consultadas via BFA",

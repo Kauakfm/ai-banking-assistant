@@ -11,6 +11,7 @@ chromadb>=0.6.0
 tiktoken>=0.7.0
 langfuse>=2.14.0,<3.0
 python-dotenv>=1.0.0
+prometheus-client>=0.20.0
 # MCP — Model Context Protocol (comunicação Agente ↔ BFA)
 mcp>=1.0.0
 langchain-mcp-adapters>=0.1.0

@@ -33,9 +33,8 @@ func main() {
 		"rastreamento", cfg.Tracing.Enabled,
 	)
 
-	// --- Observabilidade centralizada (responsabilidade do BFA) ---
 	if cfg.Tracing.Enabled {
-		shutdown, err := tracing.Init(cfg.Tracing.ServiceName)
+		shutdown, err := tracing.Init(cfg.Tracing.ServiceName, cfg.Tracing.ExporterURL)
 		if err != nil {
 			slog.Error("falha ao inicializar rastreamento", "erro", err)
 		} else {
@@ -49,7 +48,6 @@ func main() {
 		}
 	}
 
-	// --- Resiliência (responsabilidade do BFA) ---
 	cbCfg := resilience.CBConfig{
 		MaxRequests:      5,
 		Interval:         10 * time.Second,
@@ -65,7 +63,6 @@ func main() {
 
 	bulkhead := resilience.NewBulkhead(cfg.Resilience.BulkheadMaxConc)
 
-	// --- Clients de domínio (APIs que o BFA encapsula) ---
 	profileClient := client.NewProfileClient(
 		cfg.Profile.URL, cfg.Profile.Timeout,
 		resilience.NewCircuitBreaker(withName(cbCfg, "profile-api")),
@@ -78,18 +75,14 @@ func main() {
 		retrier, log,
 	)
 
-	// --- Cache e métricas (responsabilidade do BFA) ---
 	appCache := cache.New(cfg.Cache.TTL, cfg.Cache.CleanupInterval)
 	metrics := middleware.NewMetrics()
 
-	// --- Handlers BFA por domínio ---
 	profileH := handler.NewProfileHandler(profileClient, appCache, metrics, log)
 	transactionH := handler.NewTransactionHandler(transactionClient, appCache, metrics, log)
 
-	// --- Rotas expostas pelo BFA ---
 	mux := http.NewServeMux()
 
-	// Health checks
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
@@ -104,11 +97,9 @@ func main() {
 	})
 	mux.Handle("GET /metrics", promhttp.Handler())
 
-	// Contratos estáveis do BFA — operações de domínio expostas aos agentes
 	mux.Handle("GET /v1/customers/{customerId}/profile", profileH)
 	mux.Handle("GET /v1/customers/{customerId}/transactions", transactionH)
 
-	// --- Middleware stack (responsabilidade do BFA) ---
 	var h http.Handler = mux
 	h = middleware.InstrumentHTTP(metrics)(h)
 	h = middleware.Tracing(h)

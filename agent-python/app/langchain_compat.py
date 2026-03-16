@@ -13,7 +13,6 @@ import types
 def install_langchain_compat_shim():
     """Install compatibility shim for langfuse v2 + langchain v1.x."""
 
-    # 1. langchain.callbacks.base → langchain_core.callbacks.base
     if "langchain.callbacks.base" not in sys.modules:
         try:
             import langchain.callbacks.base  # noqa: F401
@@ -29,7 +28,6 @@ def install_langchain_compat_shim():
 
             sys.modules["langchain.callbacks.base"] = langchain_core.callbacks.base
 
-    # 2. langchain.schema.agent → langchain_core.agents
     if "langchain.schema.agent" not in sys.modules:
         try:
             import langchain.schema.agent  # noqa: F401
@@ -45,7 +43,6 @@ def install_langchain_compat_shim():
 
             sys.modules["langchain.schema.agent"] = langchain_core.agents
 
-    # 3. langchain.schema.document → langchain_core.documents
     if "langchain.schema.document" not in sys.modules:
         try:
             import langchain.schema.document  # noqa: F401

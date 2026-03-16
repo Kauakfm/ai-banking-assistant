@@ -11,7 +11,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/bfa-api ./cmd/api
 
-# ── Runtime ──────────────────────────────────────────────────────────────
+
 FROM alpine:3.21
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/

@@ -52,8 +52,6 @@ func getCustomerEndpoint(h http.Handler, pattern, path string) *httptest.Respons
 	return w
 }
 
-// --- Testes do BFA: Domínio Profile ---
-
 func TestProfile_MockFallback(t *testing.T) {
 	profileClient := client.NewProfileClient("", 5*time.Second, newTestCB(),
 		resilience.NewRetrier(resilience.RetryConfig{MaxAttempts: 1, BaseDelay: time.Millisecond, MaxDelay: time.Millisecond}), nil)
@@ -115,17 +113,13 @@ func TestProfile_CacheHit(t *testing.T) {
 	c := newTestCache()
 	h := handler.NewProfileHandler(profileClient, c, testMetrics(), nil)
 
-	// Primeira chamada — cache miss
 	getCustomerEndpoint(h, "/v1/customers/{customerId}/profile", "/v1/customers/c1/profile")
-	// Segunda chamada — deve vir do cache BFA
 	w := getCustomerEndpoint(h, "/v1/customers/{customerId}/profile", "/v1/customers/c1/profile")
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("esperado 200, obteve %d", w.Code)
 	}
 }
-
-// --- Testes do BFA: Domínio Transaction ---
 
 func TestTransaction_MockFallback(t *testing.T) {
 	txnClient := client.NewTransactionClient("", 5*time.Second, newTestCB(),
@@ -181,9 +175,7 @@ func TestTransaction_CacheHit(t *testing.T) {
 	c := newTestCache()
 	h := handler.NewTransactionHandler(txnClient, c, testMetrics(), nil)
 
-	// Primeira chamada — cache miss
 	getCustomerEndpoint(h, "/v1/customers/{customerId}/transactions", "/v1/customers/c1/transactions")
-	// Segunda chamada — deve vir do cache BFA
 	w := getCustomerEndpoint(h, "/v1/customers/{customerId}/transactions", "/v1/customers/c1/transactions")
 
 	if w.Code != http.StatusOK {

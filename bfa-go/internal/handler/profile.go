@@ -12,8 +12,6 @@ import (
 	"github.com/kauakfm/ai-banking-assistant/pkg/middleware"
 )
 
-// ProfileHandler é o handler BFA para o domínio de perfil do cliente.
-// Encapsula cache, métricas, logging e resiliência.
 type ProfileHandler struct {
 	client  *client.ProfileClient
 	cache   *cache.Cache
@@ -37,7 +35,6 @@ func (h *ProfileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cache: verificar se já temos o perfil em cache
 	cacheKey := fmt.Sprintf("profile:%s", customerID)
 	if cached, ok := h.cache.Get(cacheKey); ok {
 		h.metrics.CacheHits.Inc()
@@ -50,7 +47,6 @@ func (h *ProfileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	h.metrics.CacheMisses.Inc()
 
-	// Chamada à API de domínio via client com resiliência
 	profile, err := h.client.GetByID(r.Context(), customerID)
 	if err != nil {
 		h.log.ErrorContext(r.Context(), "falha ao consultar perfil via BFA",
@@ -61,7 +57,6 @@ func (h *ProfileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Armazenar no cache do BFA
 	h.cache.Set(cacheKey, profile)
 
 	h.log.InfoContext(r.Context(), "perfil consultado via BFA",

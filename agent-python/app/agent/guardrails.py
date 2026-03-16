@@ -47,10 +47,10 @@ def sanitize_input(text: str) -> tuple[str, bool]:
     return sanitized, injection_detected
 
 
-def classify_risk(query: str, config: RunnableConfig = None) -> dict:
+async def classify_risk(query: str, config: RunnableConfig = None) -> dict:
     try:
         json_llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0).bind(response_format={"type": "json_object"})
-        response = json_llm.invoke(
+        response = await json_llm.ainvoke(
             [SystemMessage(content=RISK_CLASSIFIER_SYSTEM_PROMPT), HumanMessage(content=query)],
             config=config,
         )
@@ -65,10 +65,10 @@ def validate_tool_call(tool_name: str) -> bool:
     return True
 
 
-def verify_output(answer: str, context: str, config: RunnableConfig = None) -> dict:
+async def verify_output(answer: str, context: str, config: RunnableConfig = None) -> dict:
     try:
         json_llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0).bind(response_format={"type": "json_object"})
-        response = json_llm.invoke(
+        response = await json_llm.ainvoke(
             [
                 SystemMessage(content=OUTPUT_JUDGE_SYSTEM_PROMPT),
                 HumanMessage(

@@ -11,7 +11,7 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
-      - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse-server:3000}
+      - LANGFUSE_HOST=http://langfuse-server:3000
       - BFA_GO_URL=http://bfa-go:8080
 
   bfa-go:
@@ -32,9 +32,9 @@ services:
   langfuse-db:
     image: postgres:15
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=langfuse
     ports:
       - "5432:5432"
     volumes:
@@ -53,12 +53,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=${LANGFUSE_DATABASE_URL}
-      - NEXTAUTH_SECRET=${LANGFUSE_NEXTAUTH_SECRET}
-      - SALT=${LANGFUSE_SALT}
-      - NEXTAUTH_URL=${LANGFUSE_NEXTAUTH_URL}
+      - DATABASE_URL=postgresql://postgres:postgres@langfuse-db:5432/langfuse
+      - NEXTAUTH_SECRET=ai-banking-assistant_secret_super_safe
+      - SALT=ai-banking-assistant_salt_super_safe
+      - NEXTAUTH_URL=http://localhost:3000
       - TELEMETRY_ENABLED=false
-      - ENCRYPTION_KEY=${LANGFUSE_ENCRYPTION_KEY}
+      - ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
 
 volumes:
   langfuse_data:

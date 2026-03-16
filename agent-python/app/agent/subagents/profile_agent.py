@@ -12,7 +12,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from app.agent.state import AgentState
+from app.agent.guardrails import validate_tool_call
 from app.agent.prompts.profile_agent import PROFILE_AGENT_PROMPT
+from app.metrics import TOOL_ERRORS
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 MAX_ITERATIONS = 3
@@ -49,10 +51,21 @@ def create_profile_agent(mcp_tools: list):
 
                 tool_map = {t.name: t for t in profile_tools}
                 for tc in response.tool_calls:
+                    try:
+                        validate_tool_call(tc["name"])
+                    except ValueError as e:
+                        TOOL_ERRORS.labels(tool_name=tc["name"]).inc()
+                        result = f"Ferramenta bloqueada: {str(e)}"
+                        messages.append(
+                            ToolMessage(content=result, tool_call_id=tc["id"])
+                        )
+                        continue
+
                     if tc["name"] in tool_map:
                         try:
                             result = await tool_map[tc["name"]].ainvoke(tc["args"])
                         except Exception as e:
+                            TOOL_ERRORS.labels(tool_name=tc["name"]).inc()
                             result = f"Erro ao executar {tc['name']}: {str(e)}"
                         messages.append(
                             ToolMessage(content=str(result), tool_call_id=tc["id"])

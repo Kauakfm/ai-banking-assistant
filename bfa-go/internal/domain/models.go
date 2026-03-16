@@ -2,7 +2,6 @@ package domain
 
 import "time"
 
-// Profile representa o perfil cadastral do cliente no domínio bancário.
 type Profile struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
@@ -12,7 +11,6 @@ type Profile struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// Transaction representa uma transação financeira do cliente.
 type Transaction struct {
 	ID          string    `json:"id"`
 	Date        time.Time `json:"date"`
