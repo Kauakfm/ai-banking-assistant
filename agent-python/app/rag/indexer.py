@@ -22,7 +22,7 @@ def build_vector_store():
     )
     chunks = text_splitter.split_documents(documents)
     
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    embeddings = OpenAIEmbeddings()
 
     vector_store = Chroma.from_documents(
         documents=chunks, 
@@ -33,7 +33,7 @@ def build_vector_store():
     return vector_store
 
 def get_vector_store():
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    embeddings = OpenAIEmbeddings()
     if os.path.exists(CHROMA_PATH):
         return Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
     return build_vector_store()

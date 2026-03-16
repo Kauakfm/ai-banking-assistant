@@ -28,14 +28,13 @@ func main() {
 	log := logger.New(cfg.Log.Level)
 	slog.SetDefault(log)
 
-	slog.Info("configuração carregada",
+	slog.Info("BFA inicializado — Back-end for Agents",
 		"porta", cfg.Server.Port,
-		"url_agente", cfg.Agent.URL,
 		"rastreamento", cfg.Tracing.Enabled,
 	)
 
 	if cfg.Tracing.Enabled {
-		shutdown, err := tracing.Init(cfg.Tracing.ServiceName)
+		shutdown, err := tracing.Init(cfg.Tracing.ServiceName, cfg.Tracing.ExporterURL)
 		if err != nil {
 			slog.Error("falha ao inicializar rastreamento", "erro", err)
 		} else {
@@ -64,12 +63,6 @@ func main() {
 
 	bulkhead := resilience.NewBulkhead(cfg.Resilience.BulkheadMaxConc)
 
-	agentClient := client.NewAgentClient(
-		cfg.Agent.URL, cfg.Agent.Timeout,
-		resilience.NewCircuitBreaker(withName(cbCfg, "agent")),
-		log,
-	)
-
 	profileClient := client.NewProfileClient(
 		cfg.Profile.URL, cfg.Profile.Timeout,
 		resilience.NewCircuitBreaker(withName(cbCfg, "profile-api")),
@@ -85,9 +78,8 @@ func main() {
 	appCache := cache.New(cfg.Cache.TTL, cfg.Cache.CleanupInterval)
 	metrics := middleware.NewMetrics()
 
-	assistantH := handler.NewAssistantHandler(agentClient, appCache, metrics, log)
-	profileH := handler.NewProfileHandler(profileClient, log)
-	transactionH := handler.NewTransactionHandler(transactionClient, log)
+	profileH := handler.NewProfileHandler(profileClient, appCache, metrics, log)
+	transactionH := handler.NewTransactionHandler(transactionClient, appCache, metrics, log)
 
 	mux := http.NewServeMux()
 
@@ -105,7 +97,6 @@ func main() {
 	})
 	mux.Handle("GET /metrics", promhttp.Handler())
 
-	mux.Handle("POST /v1/assistant", assistantH)
 	mux.Handle("GET /v1/customers/{customerId}/profile", profileH)
 	mux.Handle("GET /v1/customers/{customerId}/transactions", transactionH)
 
@@ -125,9 +116,9 @@ func main() {
 	}
 
 	go func() {
-		slog.Info("iniciando servidor BFA", "porta", cfg.Server.Port)
+		slog.Info("BFA escutando — expondo contratos de domínio para agentes", "porta", cfg.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("falha no servidor", "erro", err)
+			slog.Error("falha no servidor BFA", "erro", err)
 			os.Exit(1)
 		}
 	}()
@@ -145,7 +136,7 @@ func main() {
 		slog.Error("encerramento forçado", "erro", err)
 	}
 
-	slog.Info("servidor encerrado com sucesso")
+	slog.Info("BFA encerrado com sucesso")
 }
 
 func withName(cfg resilience.CBConfig, name string) resilience.CBConfig {

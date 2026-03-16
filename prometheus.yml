@@ -5,3 +5,7 @@ scrape_configs:
   - job_name: 'bfa-go'
     static_configs:
       - targets: ['bfa-go:8080']
+
+  - job_name: 'agent-python'
+    static_configs:
+      - targets: ['agent-python:8000']
