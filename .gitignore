@@ -28,7 +28,6 @@ __pycache__/
 # Dependências
 node_modules/
 vendor/
-go.sum
 
 # Arquivos de ambiente
 .env
